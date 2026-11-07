@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SpendWise | Personal Expense Tracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=Figtree:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap nav">
+    <a class="brand" href="#dashboard">SpendWise</a>
+    <button id="menuBtn" class="icon-btn menu-btn" aria-label="Toggle menu" aria-expanded="false">☰</button>
+    <nav id="mainNav" aria-label="Main">
+      <a href="#dashboard" data-page="dashboard">Dashboard</a>
+      <a href="#add" data-page="add">Add Transaction</a>
+      <a href="#history" data-page="history">History</a>
+      <a href="#budget" data-page="budget">Budget</a>
+      <a href="#reports" data-page="reports">Reports</a>
+      <a href="#tips" data-page="tips">Saving Tips</a>
+      <a href="#settings" data-page="settings">Settings</a>
+    </nav>
+    <button id="themeBtn" class="icon-btn" aria-label="Switch light or dark theme">◐</button>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- ===== PAGE 1: DASHBOARD ===== -->
+  <section class="page" id="page-dashboard" hidden>
+    <div class="page-head">
+      <h1 id="greeting">Welcome back</h1>
+      <p>Here is where your money stands today.</p>
+    </div>
+    <div id="alertBox" class="alert" hidden role="alert"></div>
+    <div class="grid stats" aria-label="Summary">
+      <div class="card stat balance"><div class="label">Current balance</div><div class="value" id="totBalance">0.00</div></div>
+      <div class="card stat"><div class="label">Total income</div><div class="value inc" id="totIncome">0.00</div></div>
+      <div class="card stat"><div class="label">Total expenses</div><div class="value exp" id="totExpense">0.00</div></div>
+    </div>
+    <div class="grid two">
+      <div class="card" id="budgetCardDash"></div>
+      <div class="card">
+        <h2>Last 6 months</h2>
+        <div class="legend"><span><i style="background:var(--green)"></i>Income</span><span><i style="background:var(--red)"></i>Expense</span></div>
+        <canvas id="miniChart" aria-label="Bar chart of income and expense for the last six months" role="img"></canvas>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Recent transactions</h2>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Date</th><th>Category</th><th class="num">Amount</th><th class="num">Balance after</th></tr></thead>
+          <tbody id="recentBody"></tbody>
+        </table>
+      </div>
+      <div class="actions">
+        <a class="btn" href="#add">Add transaction</a>
+        <a class="btn ghost" href="#history">View all</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== PAGE 2: ADD TRANSACTION ===== -->
+  <section class="page" id="page-add" hidden>
+    <div class="page-head">
+      <h1 id="formTitle">Add transaction</h1>
+      <p>Record income or an expense. You can edit it later from History.</p>
+    </div>
+    <form id="txForm" class="card" novalidate>
+      <div class="form-grid">
+        <div class="field">
+          <label for="type">Type</label>
+          <select id="type">
+            <option value="expense">Expense</option>
+            <option value="income">Income</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="amount">Amount</label>
+          <input id="amount" type="number" min="0.01" step="0.01" inputmode="decimal" placeholder="0.00">
+          <span class="err" id="errAmount"></span>
+        </div>
+        <div class="field">
+          <label for="category">Category</label>
+          <select id="category"></select>
+        </div>
+        <div class="field">
+          <label for="date">Date</label>
+          <input id="date" type="date">
+          <span class="err" id="errDate"></span>
+        </div>
+        <div class="field full">
+          <label for="note">Note (optional)</label>
+          <input id="note" type="text" maxlength="80" placeholder="e.g. Weekly groceries">
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn" type="submit" id="submitBtn">Save transaction</button>
+        <a class="btn ghost" href="#history">Cancel</a>
+      </div>
+    </form>
+  </section>
+
+  <!-- ===== PAGE 3: HISTORY ===== -->
+  <section class="page" id="page-history" hidden>
+    <div class="page-head">
+      <h1>Transaction history</h1>
+      <p>Filter by category, type or date range. The balance column shows your running balance after each entry.</p>
+    </div>
+    <div class="card">
+      <div class="filters">
+        <div class="field"><label for="fSearch">Search</label><input id="fSearch" type="search" placeholder="Note or category"></div>
+        <div class="field"><label for="fType">Type</label>
+          <select id="fType"><option value="">All types</option><option value="income">Income</option><option value="expense">Expense</option></select>
+        </div>
+        <div class="field"><label for="fCat">Category</label><select id="fCat"></select></div>
+        <div class="field"><label for="fFrom">From</label><input id="fFrom" type="date"></div>
+        <div class="field"><label for="fTo">To</label><input id="fTo" type="date"></div>
+        <div class="field"><button class="btn ghost" id="resetBtn" type="button">Clear filters</button></div>
+      </div>
+      <div class="summary-line">
+        <span>Entries: <span id="sumCount">0</span></span>
+        <span class="inc">Income: <span id="sumIncome">0</span></span>
+        <span class="exp">Expenses: <span id="sumExpense">0</span></span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Date</th><th>Category</th><th>Type</th><th class="num">Amount</th><th class="num">Balance</th><th><span class="sr-only">Actions</span></th></tr>
+          </thead>
+          <tbody id="histBody"></tbody>
+        </table>
+      </div>
+      <div class="actions">
+        <button class="btn" id="exportBtn" type="button">Export to CSV</button>
+        <a class="btn ghost" href="#add">Add transaction</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== PAGE 4: BUDGET ===== -->
+  <section class="page" id="page-budget" hidden>
+    <div class="page-head">
+      <h1>Monthly budget</h1>
+      <p>Set a spending limit and get a warning as you approach it.</p>
+    </div>
+    <div class="grid two">
+      <form id="budgetForm" class="card" novalidate>
+        <h2>Set your limit</h2>
+        <div class="form-grid">
+          <div class="field full">
+            <label for="budget">Monthly budget</label>
+            <input id="budget" type="number" min="0" step="1" inputmode="numeric" placeholder="e.g. 30000">
+            <span class="err" id="errBudget"></span>
+            <span class="hint">Enter 0 to remove your budget.</span>
+          </div>
+          <div class="field full">
+            <label for="threshold">Warn me when I have used</label>
+            <select id="threshold">
+              <option value="50">50% of the budget</option>
+              <option value="70">70% of the budget</option>
+              <option value="80">80% of the budget</option>
+              <option value="90">90% of the budget</option>
+            </select>
+          </div>
+        </div>
+        <div class="actions"><button class="btn" type="submit">Save budget</button></div>
+      </form>
+      <div class="card" id="budgetCard"></div>
+    </div>
+    <div class="grid stats">
+      <div class="card stat"><div class="label">Days left this month</div><div class="value" id="statDays">0</div></div>
+      <div class="card stat"><div class="label">Average spent per day</div><div class="value" id="statAvg">0</div></div>
+      <div class="card stat"><div class="label">You can spend per day</div><div class="value" id="statDaily">—</div></div>
+    </div>
+    <div class="card">
+      <h2>Where this month's money went</h2>
+      <div id="catBarsBudget"></div>
+    </div>
+  </section>
+
+  <!-- ===== PAGE 5: REPORTS ===== -->
+  <section class="page" id="page-reports" hidden>
+    <div class="page-head">
+      <h1>Reports</h1>
+      <p>See how income and spending change from month to month.</p>
+    </div>
+    <div class="card" style="margin-bottom:18px">
+      <div class="field" style="max-width:240px">
+        <label for="repMonth">Month</label>
+        <input id="repMonth" type="month">
+      </div>
+    </div>
+    <div class="grid stats">
+      <div class="card stat"><div class="label">Income</div><div class="value inc" id="repIncome">0</div></div>
+      <div class="card stat"><div class="label">Expenses</div><div class="value exp" id="repExpense">0</div></div>
+      <div class="card stat"><div class="label">Saved</div><div class="value" id="repSavings">0</div></div>
+      <div class="card stat"><div class="label">Savings rate</div><div class="value" id="repRate">—</div></div>
+    </div>
+    <div class="card" style="margin-bottom:18px">
+      <h2 id="trendTitle">Income vs expense</h2>
+      <div class="legend"><span><i style="background:var(--green)"></i>Income</span><span><i style="background:var(--red)"></i>Expense</span></div>
+      <canvas id="trendChart" aria-label="Bar chart comparing income and expense over six months" role="img"></canvas>
+    </div>
+    <div class="card">
+      <h2 id="catTitle">Spending by category</h2>
+      <div id="catBarsReport"></div>
+    </div>
+  </section>
+
+  <!-- ===== PAGE 6: SAVING TIPS ===== -->
+  <section class="page" id="page-tips" hidden>
+    <div class="page-head">
+      <h1>Saving tips</h1>
+      <p>Simple habits that help you keep more of what you earn.</p>
+    </div>
+    <div class="alert" id="personalTip"></div>
+    <div class="grid two">
+      <div>
+        <h2 style="margin-bottom:12px">Habits that work</h2>
+        <div id="tipsList"></div>
+      </div>
+      <div class="card" style="align-self:start">
+        <h2>50/30/20 calculator</h2>
+        <div class="field">
+          <label for="incomeIn">Monthly income</label>
+          <input id="incomeIn" type="number" min="0" step="1" inputmode="numeric" placeholder="e.g. 45000">
+        </div>
+        <div id="calcOut" style="margin-top:16px"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== PAGE 7: SETTINGS ===== -->
+  <section class="page" id="page-settings" hidden>
+    <div class="page-head">
+      <h1>Settings</h1>
+      <p>Personalise SpendWise and manage your data.</p>
+    </div>
+    <div class="grid two">
+      <form id="setForm" class="card" novalidate>
+        <h2>Preferences</h2>
+        <div class="form-grid">
+          <div class="field full">
+            <label for="name">Your name</label>
+            <input id="name" type="text" maxlength="30" placeholder="Shown on the dashboard">
+          </div>
+          <div class="field">
+            <label for="currency">Currency symbol</label>
+            <select id="currency">
+              <option value="₹">₹ Indian rupee</option>
+              <option value="$">$ Dollar</option>
+              <option value="€">€ Euro</option>
+              <option value="£">£ Pound</option>
+              <option value="¥">¥ Yen</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="theme">Theme</label>
+            <select id="theme"><option value="light">Light</option><option value="dark">Dark</option></select>
+          </div>
+        </div>
+        <div class="actions"><button class="btn" type="submit">Save settings</button></div>
+      </form>
+      <div class="card">
+        <h2>Your data</h2>
+        <p class="muted" style="margin-bottom:6px">Everything is stored only in this browser.</p>
+        <div class="actions">
+          <button class="btn ghost" id="sampleBtn" type="button">Load sample data</button>
+          <button class="btn ghost" id="exportAllBtn" type="button">Export all to CSV</button>
+          <button class="btn danger" id="clearBtn" type="button">Clear all data</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer">SpendWise · Your data stays in this browser (localStorage).</footer>
+<div id="toasts" aria-live="polite"></div>
+
+<script src="script.js"></script>
+</body>
+</html>
